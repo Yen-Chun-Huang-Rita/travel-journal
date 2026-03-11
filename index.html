@@ -1769,9 +1769,9 @@ function renderAnalytics(){
       <thead><tr><th>旅程</th><th>國家</th><th>天數</th><th>總費用</th><th>每日均費</th><th>交通</th><th>住宿</th><th>餐飲</th><th>門票</th><th>購物</th><th>其他</th></tr></thead>
       <tbody>${filtered.map(t=>{const exps=t.expenses||[];const total=exps.reduce((s,e)=>s+e.amount,0);const days=parseInt(calcDays(t.startDate,t.endDate))||1;const byCat={};exps.forEach(e=>{byCat[e.cat]=(byCat[e.cat]||0)+e.amount;});
         return `<tr><td>${t.emoji} ${t.name}</td><td>${t.country}</td><td style="text-align:center">${days}</td>
-        <td style="font-family:var(--font-en);font-size:12px">NT$ ${total.toLocaleString()}</td>
-        <td style="font-family:var(--font-en);font-size:12px">NT$ ${Math.round(total/days).toLocaleString()}</td>
-        ${['交通','住宿','餐飲','門票','購物','其他'].map(c=>`<td style="text-align:right;font-size:12px">${byCat[c]?'NT$ '+byCat[c].toLocaleString():'—'}</td>`).join('')}</tr>`;}).join('')}
+        <td style="font-family:var(--font-en);font-size:15px;font-weight:600">NT$ ${total.toLocaleString()}</td>
+        <td style="font-family:var(--font-en);font-size:15px;font-weight:600">NT$ ${Math.round(total/days).toLocaleString()}</td>
+        ${['交通','住宿','餐飲','門票','購物','其他'].map(c=>`<td style="text-align:right;font-size:15px">${byCat[c]?'NT$ '+byCat[c].toLocaleString():'—'}</td>`).join('')}</tr>`;}).join('')}
       </tbody>
     </table></div>
   </div>`;
