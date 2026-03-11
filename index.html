@@ -178,8 +178,8 @@ textarea{resize:vertical;min-height:80px}
 .kpi-value{font-family:var(--font-zh);font-size:30px;font-weight:600;color:var(--deep-teal)}
 .kpi-label{font-size:12px;color:var(--muted);letter-spacing:1px;margin-top:3px}
 /* COMP TABLE */
-.comp-table{width:100%;border-collapse:collapse;font-size:13px}
-.comp-table th{background:rgba(42,74,74,0.08);padding:9px 12px;text-align:left;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-family:var(--font-en);font-weight:400}
+.comp-table{width:100%;border-collapse:collapse;font-size:15px}
+.comp-table th{background:rgba(42,74,74,0.08);padding:9px 12px;text-align:left;font-size:11px;letter-spacing:1px;color:var(--muted);font-weight:600}
 .comp-table td{padding:9px 12px;border-top:1px solid rgba(201,151,58,0.1)}
 .comp-table tr:hover td{background:rgba(245,240,232,0.5)}
 /* EMOJI PICKER */
@@ -200,7 +200,7 @@ textarea{resize:vertical;min-height:80px}
 .empty-icon{font-size:44px;margin-bottom:14px;opacity:0.5}
 .empty-text{font-size:14px}
 .badge-green{background:rgba(107,124,90,0.15);color:var(--sage);font-size:10px;padding:2px 8px;border-radius:20px}
-.photo-modal-img{width:100%;max-height:60vh;object-fit:contain;border-radius:4px}
+.photo-modal-img{width:100%;max-height:80vh;object-fit:contain;border-radius:4px;cursor:zoom-out}
 ::-webkit-scrollbar{width:5px}
 ::-webkit-scrollbar-thumb{background:rgba(201,151,58,0.3);border-radius:3px}
 /* cover photo picker in new trip modal */
@@ -1009,9 +1009,9 @@ function renderTripDetail(trip){
   <div class="tab-content ${currentDetailTab==='expense'?'active':''}" id="tab-expense">${renderExpenses(trip)}</div>
   <div class="tab-content ${currentDetailTab==='photos'?'active':''}" id="tab-photos">
     <div class="photos-grid" id="photos-grid">
-      ${(trip.photos||[]).map(p=>`<div class="photo-card">
-        <img src="${p.src}" alt="${p.name}" onclick="viewPhoto('${p.id}')">
-        <button class="photo-card-del" onclick="deletePhoto('${p.id}')">✕</button>
+      ${(trip.photos||[]).map(p=>`<div class="photo-card" onclick="viewPhoto('${p.id}')">
+        <img src="${p.src}" alt="${p.name}">
+        <button class="photo-card-del" onclick="event.stopPropagation();deletePhoto('${p.id}')">✕</button>
       </div>`).join('')}
       <div class="photo-upload-btn" onclick="document.getElementById('photo-upload-input').click()">
         <span style="font-size:28px">📷</span><span>上傳相片</span>
@@ -1769,9 +1769,9 @@ function renderAnalytics(){
       <thead><tr><th>旅程</th><th>國家</th><th>天數</th><th>總費用</th><th>每日均費</th><th>交通</th><th>住宿</th><th>餐飲</th><th>門票</th><th>購物</th><th>其他</th></tr></thead>
       <tbody>${filtered.map(t=>{const exps=t.expenses||[];const total=exps.reduce((s,e)=>s+e.amount,0);const days=parseInt(calcDays(t.startDate,t.endDate))||1;const byCat={};exps.forEach(e=>{byCat[e.cat]=(byCat[e.cat]||0)+e.amount;});
         return `<tr><td>${t.emoji} ${t.name}</td><td>${t.country}</td><td style="text-align:center">${days}</td>
-        <td style="font-family:var(--font-en);font-size:15px;font-weight:600">NT$ ${total.toLocaleString()}</td>
-        <td style="font-family:var(--font-en);font-size:15px;font-weight:600">NT$ ${Math.round(total/days).toLocaleString()}</td>
-        ${['交通','住宿','餐飲','門票','購物','其他'].map(c=>`<td style="text-align:right;font-size:15px">${byCat[c]?'NT$ '+byCat[c].toLocaleString():'—'}</td>`).join('')}</tr>`;}).join('')}
+        <td style="text-align:right;font-weight:700;color:var(--ink)">NT$ ${total.toLocaleString()}</td>
+        <td style="text-align:right;font-weight:700;color:var(--ink)">NT$ ${Math.round(total/days).toLocaleString()}</td>
+        ${['交通','住宿','餐飲','門票','購物','其他'].map(c=>`<td style="text-align:right">${byCat[c]?'NT$ '+byCat[c].toLocaleString():'—'}</td>`).join('')}</tr>`;}).join('')}
       </tbody>
     </table></div>
   </div>`;
