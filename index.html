@@ -283,7 +283,13 @@ textarea{resize:vertical;min-height:80px}
     <!-- CALENDAR -->
     <div class="page" id="page-calendar">
       <div class="section-title">行事曆</div>
-      <div class="section-subtitle" style="margin-bottom:22px">所有旅程時間一覽</div>
+      <div class="section-subtitle" style="margin-bottom:16px">所有旅程時間一覽</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+        <label style="font-size:13px;color:var(--muted)">年度篩選</label>
+        <select id="filter-year" onchange="renderCalendar()" style="height:34px;padding:0 10px;border:1px solid rgba(201,151,58,0.3);border-radius:4px;font-size:14px;background:white;color:var(--ink);cursor:pointer">
+          <option value="">全部年份</option>
+        </select>
+      </div>
       <div id="calendar-list"></div>
     </div>
   </div>
@@ -1769,8 +1775,8 @@ function renderAnalytics(){
       <thead><tr><th>旅程</th><th>國家</th><th>天數</th><th>總費用</th><th>每日均費</th><th>交通</th><th>住宿</th><th>餐飲</th><th>門票</th><th>購物</th><th>其他</th></tr></thead>
       <tbody>${filtered.map(t=>{const exps=t.expenses||[];const total=exps.reduce((s,e)=>s+e.amount,0);const days=parseInt(calcDays(t.startDate,t.endDate))||1;const byCat={};exps.forEach(e=>{byCat[e.cat]=(byCat[e.cat]||0)+e.amount;});
         return `<tr><td>${t.emoji} ${t.name}</td><td>${t.country}</td><td style="text-align:center">${days}</td>
-        <td style="text-align:right;font-weight:700;color:var(--ink)">NT$ ${total.toLocaleString()}</td>
-        <td style="text-align:right;font-weight:700;color:var(--ink)">NT$ ${Math.round(total/days).toLocaleString()}</td>
+        <td style="text-align:right">NT$ ${total.toLocaleString()}</td>
+        <td style="text-align:right">NT$ ${Math.round(total/days).toLocaleString()}</td>
         ${['交通','住宿','餐飲','門票','購物','其他'].map(c=>`<td style="text-align:right">${byCat[c]?'NT$ '+byCat[c].toLocaleString():'—'}</td>`).join('')}</tr>`;}).join('')}
       </tbody>
     </table></div>
@@ -1797,8 +1803,21 @@ function renderAnalytics(){
 // ===== CALENDAR =====
 function renderCalendar(){
   const list=document.getElementById('calendar-list');
-  const sorted=[...trips].filter(t=>t.startDate&&(!filterCountry||t.country===filterCountry)).sort((a,b)=>new Date(a.startDate)-new Date(b.startDate));
-  if(!sorted.length){list.innerHTML=`<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-text">尚無旅程資料</div></div>`;return;}
+  const yearSel=document.getElementById('filter-year');
+  const filterYear=yearSel?yearSel.value:'';
+
+  // Build all years from trips for dropdown
+  const allYears=[...new Set(trips.filter(t=>t.startDate).map(t=>t.startDate.slice(0,4)))].sort((a,b)=>b-a);
+  if(yearSel){
+    const cur=yearSel.value;
+    yearSel.innerHTML='<option value="">全部年份</option>'+allYears.map(y=>`<option value="${y}" ${y===cur?'selected':''}>${y} 年</option>`).join('');
+  }
+
+  const sorted=[...trips].filter(t=>t.startDate
+    &&(!filterCountry||t.country===filterCountry)
+    &&(!filterYear||t.startDate.slice(0,4)===filterYear)
+  ).sort((a,b)=>new Date(a.startDate)-new Date(b.startDate));
+  if(!sorted.length){list.innerHTML=`<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-text">${filterYear?filterYear+' 年無旅程資料':'尚無旅程資料'}</div></div>`;return;}
 
   // Group by year
   const byYear={};
