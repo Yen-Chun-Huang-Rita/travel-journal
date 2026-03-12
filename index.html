@@ -200,7 +200,7 @@ textarea{resize:vertical;min-height:80px}
 .empty-icon{font-size:44px;margin-bottom:14px;opacity:0.5}
 .empty-text{font-size:14px}
 .badge-green{background:rgba(107,124,90,0.15);color:var(--sage);font-size:10px;padding:2px 8px;border-radius:20px}
-.photo-modal-img{width:100%;max-height:80vh;object-fit:contain;border-radius:4px;cursor:zoom-out}
+.photo-modal-img{width:100%;max-height:78vh;object-fit:contain;border-radius:3px}
 ::-webkit-scrollbar{width:5px}
 ::-webkit-scrollbar-thumb{background:rgba(201,151,58,0.3);border-radius:3px}
 /* cover photo picker in new trip modal */
@@ -472,10 +472,17 @@ textarea{resize:vertical;min-height:80px}
 </div>
 
 <!-- PHOTO VIEWER -->
-<div class="modal-overlay" id="modal-photo">
-  <div class="modal" style="max-width:700px">
-    <div class="modal-header"><div class="modal-title" id="photo-modal-title">相片</div><button class="modal-close" onclick="closeModal('modal-photo')">✕</button></div>
-    <div class="modal-body" style="text-align:center"><img id="photo-modal-img" class="photo-modal-img" src="" alt=""></div>
+<div class="modal-overlay" id="modal-photo" onclick="if(event.target===this)closeModal('modal-photo')">
+  <div class="modal" style="max-width:800px;background:rgba(10,8,5,0.95);border:1px solid rgba(201,151,58,0.2);position:relative">
+    <button class="modal-close" onclick="closeModal('modal-photo')" style="position:absolute;top:10px;right:12px;z-index:10;color:rgba(255,255,255,0.7);background:rgba(255,255,255,0.1);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center">✕</button>
+    <!-- 左箭頭 -->
+    <button id="photo-prev" onclick="navigatePhoto(-1)" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);z-index:10;background:rgba(255,255,255,0.15);border:none;color:white;font-size:24px;width:44px;height:44px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">‹</button>
+    <!-- 右箭頭 -->
+    <button id="photo-next" onclick="navigatePhoto(1)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);z-index:10;background:rgba(255,255,255,0.15);border:none;color:white;font-size:24px;width:44px;height:44px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">›</button>
+    <div class="modal-body" style="text-align:center;padding:16px 60px">
+      <img id="photo-modal-img" class="photo-modal-img" src="" alt="">
+      <div id="photo-counter" style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:10px;font-family:var(--font-en)"></div>
+    </div>
   </div>
 </div>
 
@@ -1451,7 +1458,30 @@ function handlePhotoUpload(event){
   event.target.value='';
 }
 
-function viewPhoto(id){const trip=trips.find(t=>t.id===currentTripId);const p=(trip.photos||[]).find(x=>x.id===id);if(!p)return;document.getElementById('photo-modal-img').src=p.src;document.getElementById('photo-modal-title').textContent=p.name;openModal('modal-photo');}
+function viewPhoto(id){
+  const trip=trips.find(t=>t.id===currentTripId);
+  const photos=trip.photos||[];
+  const idx=photos.findIndex(x=>x.id===id);
+  if(idx<0)return;
+  window._photoIdx=idx;
+  _showPhoto(photos,idx);
+  openModal('modal-photo');
+}
+function _showPhoto(photos,idx){
+  const p=photos[idx];if(!p)return;
+  document.getElementById('photo-modal-img').src=p.src;
+  document.getElementById('photo-counter').textContent=(idx+1)+' / '+photos.length;
+  // 顯示/隱藏箭頭
+  document.getElementById('photo-prev').style.opacity=idx>0?'1':'0.2';
+  document.getElementById('photo-next').style.opacity=idx<photos.length-1?'1':'0.2';
+}
+function navigatePhoto(dir){
+  const trip=trips.find(t=>t.id===currentTripId);
+  const photos=trip.photos||[];
+  const newIdx=Math.max(0,Math.min(photos.length-1,(window._photoIdx||0)+dir));
+  window._photoIdx=newIdx;
+  _showPhoto(photos,newIdx);
+}
 function deletePhoto(id){const trip=trips.find(t=>t.id===currentTripId);trip.photos=trip.photos.filter(p=>p.id!==id);saveTrips();renderTripDetail(trip);}
 
 // ===== NOTES =====
@@ -1859,6 +1889,15 @@ function renderCalendar(){
 
 // ===== UTILS =====
 let _toastTimer=null;
+// 鍵盤左右鍵瀏覽相片
+document.addEventListener('keydown',function(e){
+  if(document.getElementById('modal-photo').classList.contains('open')){
+    if(e.key==='ArrowLeft') navigatePhoto(-1);
+    if(e.key==='ArrowRight') navigatePhoto(1);
+    if(e.key==='Escape') closeModal('modal-photo');
+  }
+});
+
 function toast(msg,icon='✓'){
   const el=document.getElementById('toast');
   el.innerHTML=`<span style="color:var(--gold-light);font-size:15px">${icon}</span> ${msg}`;
