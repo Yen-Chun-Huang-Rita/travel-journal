@@ -575,25 +575,33 @@ function cloudPull() {
   });
 }
 
-// POST push - no-cors works from file://
-async function cloudPush(tripsData) {
-  const payload = JSON.stringify({trips: tripsData});
-  try {
-    const res = await fetch(SHEETS_API, {
-      method: 'POST',
-      headers: {'Content-Type':'text/plain'},
-      body: payload
-    });
-    if(res.ok) return;
-  } catch(e) {}
-  try {
-    await fetch(SHEETS_API, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: {'Content-Type':'text/plain'},
-      body: payload
-    });
-  } catch(e) {}
+// JSONP push - 用 GET + JSONP 繞過 CORS，和 pull 同樣方式
+function cloudPush(tripsData) {
+  return new Promise((resolve, reject) => {
+    const cbName = '_pushCb' + Date.now();
+    const script = document.createElement('script');
+    const timer = setTimeout(() => {
+      delete window[cbName];
+      script.remove();
+      reject(new Error('push timeout'));
+    }, 15000);
+    window[cbName] = (result) => {
+      clearTimeout(timer);
+      delete window[cbName];
+      script.remove();
+      if(result && result.ok) resolve(result);
+      else reject(new Error(result && result.error ? result.error : 'push failed'));
+    };
+    script.onerror = () => {
+      clearTimeout(timer);
+      delete window[cbName];
+      reject(new Error('script error'));
+    };
+    // 資料用 encodeURIComponent 包裝後傳給 Apps Script
+    const payload = encodeURIComponent(JSON.stringify(tripsData));
+    script.src = SHEETS_API + '?action=push&callback=' + cbName + '&data=' + payload + '&t=' + Date.now();
+    document.head.appendChild(script);
+  });
 }
 
 function updateSyncIndicator(status) {
@@ -617,10 +625,18 @@ function schedulePush() {
     if(_isSyncing) return;
     _isSyncing = true;
     updateSyncIndicator('syncing');
-    await cloudPush(trips);
-    _isSyncing = false;
-    updateSyncIndicator('ok');
-  }, 1500); // debounce 1.5s after last change
+    try {
+      await cloudPush(trips);
+      updateSyncIndicator('ok');
+    } catch(e) {
+      console.warn('cloud push failed:', e.message);
+      updateSyncIndicator('error');
+      // 5秒後回復 local 狀態，不要一直顯示失敗
+      setTimeout(() => updateSyncIndicator('local'), 5000);
+    } finally {
+      _isSyncing = false;
+    }
+  }, 1500);
 }
 
 // IndexedDB helpers - survives refresh on file:// and https://
