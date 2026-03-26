@@ -234,8 +234,10 @@ textarea{resize:vertical;min-height:80px}
     <div class="nav-item" onclick="showPage('analytics')"><span class="nav-icon">📊</span> 分析報表</div>
     <div class="nav-item" onclick="showPage('calendar')"><span class="nav-icon">📅</span> 行事曆</div>
     <div class="nav-section-label" style="margin-top:6px">資料管理</div>
-    <div class="nav-item" onclick="exportAllExcel()"><span class="nav-icon">📤</span> 匯出所有資料</div>
-    <div class="nav-item" onclick="document.getElementById('import-file').click()"><span class="nav-icon">📥</span> 匯入旅程資料</div>
+    <div class="nav-item" onclick="exportAllExcel()"><span class="nav-icon">📤</span> 匯出所有資料 (Excel)</div>
+    <div class="nav-item" onclick="exportAllJson()"><span class="nav-icon">📤</span> 匯出所有資料 (JSON)</div>
+    <div class="nav-item" onclick="document.getElementById('import-file').click()"><span class="nav-icon">📥</span> 匯入旅程資料 (Excel)</div>
+    <div class="nav-item" onclick="document.getElementById('import-json-file').click()"><span class="nav-icon">📥</span> 匯入旅程資料 (JSON)</div>
     <div class="nav-item" onclick="showDataDiag()" style="font-size:11px;opacity:0.7"><span class="nav-icon">🔍</span> 資料診斷</div>
   </nav>
   <div class="sidebar-stats">
@@ -538,6 +540,7 @@ textarea{resize:vertical;min-height:80px}
 
 <!-- HIDDEN INPUTS -->
 <input type="file" accept=".xlsx" class="file-input" id="import-file" onchange="importExcel(event)">
+<input type="file" accept=".json" class="file-input" id="import-json-file" onchange="importJson(event)">
 <input type="file" accept="image/*" multiple class="file-input" id="photo-upload-input" onchange="handlePhotoUpload(event)">
 <input type="file" accept="image/*" class="file-input" id="cover-change-input" onchange="changeCoverPhoto(event)">
 
@@ -1727,6 +1730,51 @@ function readXlsx(event,cb){
 }
 
 // ===== GLOBAL EXCEL EXPORT =====
+function exportAllJson(){
+  if(!trips.length){alert('尚無旅程資料');return;}
+  const json = JSON.stringify(trips, null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '雁君的旅途誌_' + new Date().toLocaleDateString('zh-TW').replace(/\//g,'-') + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('JSON 匯出完成 ✅');
+}
+
+function importJson(event){
+  const file = event.target.files[0];
+  event.target.value = '';
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if(!Array.isArray(data)) { alert('格式錯誤：JSON 必須是陣列'); return; }
+      if(!data.length) { alert('JSON 中沒有旅程資料'); return; }
+      const existing = trips.length;
+      confirmImport(existing, '旅程', data.length, (cover) => {
+        if(cover) {
+          trips = data;
+        } else {
+          // 避免重複 id
+          const existingIds = new Set(trips.map(t=>t.id));
+          data.forEach(t => {
+            if(existingIds.has(t.id)) t.id = Date.now().toString() + Math.random().toString(36).slice(2);
+            trips.push(t);
+          });
+        }
+        saveTrips();
+        renderTrips();
+        toast(`已${cover?'覆蓋':'新增'}匯入 ${data.length} 筆旅程 (JSON)`,'📥');
+      });
+    } catch(err) {
+      alert('JSON 解析失敗：' + err.message);
+    }
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
 function exportAllExcel(){
   if(!trips.length){alert('尚無旅程資料');return;}
   const wb=XLSX.utils.book_new();
