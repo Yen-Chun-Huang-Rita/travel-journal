@@ -1327,7 +1327,90 @@ function printSection(type){
       .unchecked{color:#0d0900}
       .num{color:#8a6010;font-weight:700;min-width:28px}
       @media print{body{padding:0}}
-    </style>`;
+    
+/* ===== 手機版 RWD ===== */
+@media (max-width: 768px) {
+  /* 隱藏桌面側邊欄 */
+  .sidebar { display: none; }
+  /* 主內容全寬 */
+  .main { margin-left: 0; }
+  /* topbar 簡化 */
+  .topbar { padding: 10px 16px; }
+  .page-title { font-size: 18px; }
+  /* 底部導覽列 */
+  .mobile-nav {
+    display: flex !important;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--deep-teal);
+    z-index: 200;
+    border-top: 1px solid rgba(201,151,58,0.3);
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
+  }
+  .mobile-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 4px 10px;
+    cursor: pointer;
+    color: rgba(255,255,255,0.6);
+    font-size: 10px;
+    gap: 3px;
+    transition: all 0.2s;
+    border-top: 2px solid transparent;
+  }
+  .mobile-nav-item.active {
+    color: var(--gold-light);
+    border-top-color: var(--gold);
+  }
+  .mobile-nav-item .mn-icon { font-size: 22px; line-height: 1; }
+  /* 底部留空給 nav */
+  .content-area { padding-bottom: 80px !important; }
+  /* 手機版 trip cards 單欄 */
+  .trips-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
+  /* 手機版 topbar 右側資訊縮小 */
+  .topbar-sync { font-size: 10px !important; }
+  /* 手機版 modal 全寬 */
+  .modal-box { width: 96vw !important; max-height: 90vh !important; margin: 0 auto; }
+  /* 手機版 tab 文字縮小 */
+  .tab { font-size: 13px !important; padding: 8px 10px !important; }
+  /* 手機版按鈕間距 */
+  .section-actions { flex-wrap: wrap; gap: 6px; }
+  /* 手機版 topbar 隱藏部分元素 */
+  .topbar-actions { display: none; }
+  /* 手機版 country filter 全寬 */
+  .filter-row { flex-wrap: wrap; }
+  /* 手機版 table 橫向捲動 */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { min-width: 500px; }
+  /* 手機版更多按鈕選單 */
+  .mobile-more-menu {
+    display: none;
+    position: fixed;
+    bottom: 65px; left: 0; right: 0;
+    background: var(--deep-teal);
+    border-top: 1px solid rgba(201,151,58,0.2);
+    z-index: 199;
+    padding: 8px 0;
+  }
+  .mobile-more-menu.open { display: block; }
+  .mobile-more-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 24px;
+    color: rgba(255,255,255,0.85);
+    font-size: 15px;
+    cursor: pointer;
+  }
+  .mobile-more-item:hover { background: rgba(201,151,58,0.1); color: var(--gold-light); }
+}
+/* 手機導覽列預設隱藏（桌面） */
+.mobile-nav { display: none; }
+.mobile-more-menu { display: none; }
+</style>`;
 
   if(type==='checklist'){
     const list=trip.checklist||[];
@@ -1368,7 +1451,37 @@ function printSection(type){
   }
 
   const w=window.open('','_blank','width=800,height=600');
-  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>列印</title></head><body>'+html+'</body></html>');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>列印</title></head><body>'+html+'
+<!-- 手機底部導覽列 -->
+<nav class="mobile-nav" id="mobile-nav">
+  <div class="mobile-nav-item active" id="mn-trips" onclick="mobileNav('trips')">
+    <span class="mn-icon">🗺️</span><span>旅程</span>
+  </div>
+  <div class="mobile-nav-item" id="mn-analytics" onclick="mobileNav('analytics')">
+    <span class="mn-icon">📊</span><span>分析</span>
+  </div>
+  <div class="mobile-nav-item" id="mn-calendar" onclick="mobileNav('calendar')">
+    <span class="mn-icon">📅</span><span>行事曆</span>
+  </div>
+  <div class="mobile-nav-item" id="mn-more" onclick="toggleMobileMore()">
+    <span class="mn-icon">☰</span><span>更多</span>
+  </div>
+</nav>
+<!-- 手機更多選單 -->
+<div class="mobile-more-menu" id="mobile-more-menu">
+  <div class="mobile-more-item" onclick="exportAllExcel();toggleMobileMore()">📤 匯出 Excel</div>
+  <div class="mobile-more-item" onclick="exportAllJson();toggleMobileMore()">📤 匯出 JSON</div>
+  <div class="mobile-more-item" onclick="document.getElementById('import-file').click();toggleMobileMore()">📥 匯入 Excel</div>
+  <div class="mobile-more-item" onclick="document.getElementById('import-json-file').click();toggleMobileMore()">📥 匯入 JSON</div>
+  <div class="mobile-more-item" onclick="showDataDiag();toggleMobileMore()">🔍 資料診斷</div>
+  <div class="mobile-more-item" style="border-top:1px solid rgba(201,151,58,0.2);margin-top:4px;padding-top:12px">
+    <span id="mn-stat-total">0</span> 旅程 &nbsp;|&nbsp;
+    <span id="mn-stat-countries">0</span> 國家 &nbsp;|&nbsp;
+    <span id="mn-stat-days">0</span> 天
+  </div>
+</div>
+
+</body></html>');
   w.document.close();
   w.focus();
   setTimeout(()=>w.print(),500);
@@ -2113,6 +2226,62 @@ async function showDataDiag(){
 }
 
 init();
+
+function mobileNav(page) {
+  document.querySelectorAll('.mobile-nav-item').forEach(n => n.classList.remove('active'));
+  const el = document.getElementById('mn-' + page);
+  if(el) el.classList.add('active');
+  // 關閉更多選單
+  document.getElementById('mobile-more-menu').classList.remove('open');
+  showPage(page);
+}
+
+function toggleMobileMore() {
+  document.getElementById('mobile-more-menu').classList.toggle('open');
+}
+
+// 同步手機底部 stats
+function updateMobileStats() {
+  const total = trips.length;
+  const countries = new Set(trips.map(t=>t.country).filter(Boolean)).size;
+  const days = trips.reduce((s,t)=>s+calcDays(t.startDate,t.endDate),0);
+  const el1 = document.getElementById('mn-stat-total');
+  const el2 = document.getElementById('mn-stat-countries');
+  const el3 = document.getElementById('mn-stat-days');
+  if(el1) el1.textContent = total;
+  if(el2) el2.textContent = countries;
+  if(el3) el3.textContent = days;
+}
 </script>
+
+<!-- 手機底部導覽列 -->
+<nav class="mobile-nav" id="mobile-nav">
+  <div class="mobile-nav-item active" id="mn-trips" onclick="mobileNav('trips')">
+    <span class="mn-icon">🗺️</span><span>旅程</span>
+  </div>
+  <div class="mobile-nav-item" id="mn-analytics" onclick="mobileNav('analytics')">
+    <span class="mn-icon">📊</span><span>分析</span>
+  </div>
+  <div class="mobile-nav-item" id="mn-calendar" onclick="mobileNav('calendar')">
+    <span class="mn-icon">📅</span><span>行事曆</span>
+  </div>
+  <div class="mobile-nav-item" id="mn-more" onclick="toggleMobileMore()">
+    <span class="mn-icon">☰</span><span>更多</span>
+  </div>
+</nav>
+<!-- 手機更多選單 -->
+<div class="mobile-more-menu" id="mobile-more-menu">
+  <div class="mobile-more-item" onclick="exportAllExcel();toggleMobileMore()">📤 匯出 Excel</div>
+  <div class="mobile-more-item" onclick="exportAllJson();toggleMobileMore()">📤 匯出 JSON</div>
+  <div class="mobile-more-item" onclick="document.getElementById('import-file').click();toggleMobileMore()">📥 匯入 Excel</div>
+  <div class="mobile-more-item" onclick="document.getElementById('import-json-file').click();toggleMobileMore()">📥 匯入 JSON</div>
+  <div class="mobile-more-item" onclick="showDataDiag();toggleMobileMore()">🔍 資料診斷</div>
+  <div class="mobile-more-item" style="border-top:1px solid rgba(201,151,58,0.2);margin-top:4px;padding-top:12px">
+    <span id="mn-stat-total">0</span> 旅程 &nbsp;|&nbsp;
+    <span id="mn-stat-countries">0</span> 國家 &nbsp;|&nbsp;
+    <span id="mn-stat-days">0</span> 天
+  </div>
+</div>
+
 </body>
 </html>
