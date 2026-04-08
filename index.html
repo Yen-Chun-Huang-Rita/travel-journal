@@ -336,7 +336,7 @@ td.num, .num { font-family: var(--font-en) !important; }
     <div style="display:flex;gap:10px;align-items:center">
       <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)">
         <span id="sync-dot" style="width:8px;height:8px;border-radius:50%;background:#c9973a;display:inline-block;transition:all 0.4s" title="雲端同步狀態"></span>
-        <span id="sync-txt" style="font-size:11px;font-family:var(--font-zh);color:var(--muted);min-width:60px">連線中…</span>
+        <span id="sync-txt" style="font-size:11px;font-family:var(--font-zh);color:var(--muted);min-width:60px">載入中…</span>
         <span style="opacity:0.3;margin:0 2px">|</span>
         <span id="save-dot" style="width:8px;height:8px;border-radius:50%;background:#aaa;display:inline-block;transition:all 0.4s" title="儲存狀態"></span>
         <span id="save-label" style="font-size:11px;font-family:var(--font-zh);color:var(--muted);transition:opacity 0.5s;opacity:0;min-width:60px"></span>
@@ -648,7 +648,7 @@ function cloudPull() {
       delete window[cbName];
       script.remove();
       resolve(null);
-    }, 5000);
+    }, 4000);
     window[cbName] = (data) => {
       clearTimeout(timer);
       delete window[cbName];
@@ -700,7 +700,7 @@ function updateSyncIndicator(status) {
   const txt = document.getElementById('sync-txt');
   if(!dot||!txt) return;
   const map = {
-    syncing: {color:'#c9973a', text:'同步中…'},
+    syncing: {color:'#c9973a', text:'載入中…'},
     ok:      {color:'#6b7c5a', text:'雲端已同步'},
     local:   {color:'#8a7f6e', text:'本機儲存'},
     error:   {color:'#c0392b', text:'同步失敗'},
@@ -774,7 +774,8 @@ async function loadTrips() {
   }
 
   // 2. 背景同步雲端（不阻塞畫面顯示）
-  updateSyncIndicator('syncing');
+  // 有本機資料就先顯示本機儲存，等雲端回來再更新
+  updateSyncIndicator(merged.length ? 'local' : 'syncing');
   cloudPull().then(cloud => {
     if(cloud && cloud.length) {
       // 用雲端資料更新
