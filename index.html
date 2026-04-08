@@ -2231,7 +2231,14 @@ function _showSaveDot(ok){
     dot.style.background='#aaa';
   }, 3000);
 }
-function openModal(id){document.getElementById(id).classList.add('open');}
+function openModal(id){
+  var el=document.getElementById(id);
+  el.classList.add('open');
+  // 防止拖曳選字時誤關：只有 mousedown 和 mouseup 都在 overlay 才關閉
+  el._mousedownOnOverlay = false;
+  el.onmousedown = function(e){ el._mousedownOnOverlay = (e.target === el); };
+  el.onclick = function(e){ if(e.target === el && el._mousedownOnOverlay) closeModal(id); };
+}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 
 document.querySelectorAll('.modal-overlay').forEach(m=>{
