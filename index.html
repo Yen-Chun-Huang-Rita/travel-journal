@@ -4,13 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>鈞逸和雁君的旅遊誌</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Cormorant+Garamond:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
 /* FONT SYSTEM: Chinese = Noto Serif TC, Latin/English = Cormorant Garamond */
 :lang(zh), :lang(zh-TW) { font-family: 'Noto Serif TC', serif; }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+
 <style>
 :root{--ink:#0d0900;--parchment:#f5f0e8;--warm-cream:#ede8d8;--gold:#b8841e;--gold-light:#e8c878;--rust:#8b4513;--sage:#6b7c5a;--deep-teal:#1e3838;--muted:#5a5040;--card-bg:rgba(245,240,232,0.92);--shadow:0 4px 24px rgba(26,18,8,0.12);--shadow-hover:0 8px 40px rgba(26,18,8,0.2);
   --font-zh:'Noto Serif TC',serif;--font-en:'Cormorant Garamond',serif}
@@ -38,7 +39,7 @@ body{font-family:var(--font-zh);background:var(--parchment);color:var(--ink);fon
 /* MAIN */
 .main{margin-left:260px;flex:1;display:flex;flex-direction:column}
 .topbar{background:rgba(245,240,232,0.95);backdrop-filter:blur(10px);padding:16px 40px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(201,151,58,0.2);position:sticky;top:0;z-index:50}
-.page-title{font-family:var(--font-en);font-size:24px;font-weight:400;font-style:italic;color:var(--deep-teal)}
+.page-title{font-family:var(--font-en);font-size:24px;font-weight:400;font-style:normal;color:var(--deep-teal)}
 /* BUTTONS */
 .btn{padding:9px 20px;border:none;border-radius:2px;cursor:pointer;font-family:var(--font-zh);font-size:14px;transition:all 0.2s}
 .btn-primary{background:var(--gold);color:white;letter-spacing:1px}
@@ -119,7 +120,7 @@ textarea{resize:vertical;min-height:80px}
 .itin-table tbody tr:last-child{border-bottom:none}
 .itin-table td{padding:6px 10px;vertical-align:middle;line-height:1.4}
 .itin-date{font-size:15px;color:var(--deep-teal);white-space:nowrap;font-weight:600}
-.itin-time{font-family:var(--font-en);font-size:18px;color:#6a4000;white-space:nowrap;font-weight:700}
+.itin-time{font-family:var(--font-zh);font-size:15px;color:#6a4000;white-space:nowrap;font-weight:600}
 .itin-name{color:var(--ink);font-size:16px;font-weight:500}
 .itin-note{color:#4a4030;font-size:15px}
 .itin-actions{white-space:nowrap;text-align:right}
@@ -216,6 +217,26 @@ textarea{resize:vertical;min-height:80px}
 /* TOAST */
 #toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--deep-teal);color:white;padding:11px 22px;border-radius:4px;font-size:13px;font-family:var(--font-zh);box-shadow:0 4px 18px rgba(0,0,0,0.18);opacity:0;pointer-events:none;transition:opacity 0.25s,transform 0.25s;z-index:9999;white-space:nowrap;display:flex;align-items:center;gap:8px}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ===== 全局數字字體：Cormorant Garamond ===== */
+/* 所有數字相關的 class 統一使用 Cormorant Garamond */
+.stat-num, .expense-stat-amount, .comp-amount, .trip-budget,
+[style*="font-family:var(--font-en)"] { font-style: normal !important; }
+.stat-num, .expense-stat-amount, .comp-amount, .trip-budget,
+[style*="font-family:var(--font-en)"],
+.budget-bar-labels, .budget-bar-labels span,
+td.num, .num { font-family: var(--font-en) !important; }
+
+/* 讓 table 內的金額欄位自動套用 */
+.expense-table td:nth-child(3),
+.comp-table td:last-child,
+.comp-table td:nth-child(4),
+.comp-table td:nth-child(5) { font-family: var(--font-en); }
+
+
+.trip-budget { font-family: var(--font-en); }
+.cal-spend, .cal-days { font-family: var(--font-en); }
+.kpi-value { font-family: var(--font-en); }
 
 /* ===== 手機版 RWD ===== */
 @media (max-width: 768px) {
@@ -803,6 +824,12 @@ const CAT_COLORS={'交通':'#3498db','住宿':'#e74c3c','餐飲':'#f39c12','門�
 
 // ===== INIT =====
 async function init(){
+  // 設定 Chart.js 全局字體
+  if(window.Chart) {
+    Chart.defaults.font.family = "'Cormorant Garamond', serif";
+    Chart.defaults.font.size = 13;
+    Chart.defaults.color = '#3a3020';
+  }
   // Show loading indicator
   const grid = document.getElementById('trips-grid');
   if(grid) { grid.style.display='block'; grid.innerHTML='<div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-text">載入資料中…</div></div>'; }
@@ -1475,37 +1502,73 @@ function getExpenseName(){
 }
 
 function renderExpenses(trip){
-  const exps=trip.expenses||[];const total=exps.reduce((s,e)=>s+e.amount,0);
-  const budget=Number(trip.budget)||0;const pct=budget?Math.min(100,Math.round(total/budget*100)):0;
+  const exps=trip.expenses||[];
+  const total=exps.reduce((s,e)=>s+e.amount,0);
+  const budget=Number(trip.budget)||0;
+  const pct=budget?Math.min(100,Math.round(total/budget*100)):0;
   const topCat=Object.entries(exps.reduce((a,e)=>{a[e.cat]=(a[e.cat]||0)+e.amount;return a},{})).sort((a,b)=>b[1]-a[1])[0];
+
+  // 按類別分組
+  const catOrder=['交通','住宿','餐飲','門票','購物','其他'];
+  const grouped={};
+  exps.forEach(e=>{if(!grouped[e.cat])grouped[e.cat]=[];grouped[e.cat].push(e);});
+  const cats=[...catOrder.filter(c=>grouped[c]),...Object.keys(grouped).filter(c=>!catOrder.includes(c))];
+
+  // 建立分組表格 HTML
+  let tableHtml='';
+  if(exps.length){
+    tableHtml=`<div style="margin-top:16px">`;
+    cats.forEach(cat=>{
+      const rows=grouped[cat];
+      const catTotal=rows.reduce((s,e)=>s+e.amount,0);
+      const color=CAT_COLORS[cat]||'#95a5a6';
+      tableHtml+=`
+      <div style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:${color}18;border-left:3px solid ${color};margin-bottom:4px">
+          <span style="font-size:12px;font-weight:600;color:${color};letter-spacing:1px">${cat}</span>
+          <span style="font-size:12px;font-weight:600;color:${color}"><span style="font-family:var(--font-zh)">小計 </span><span style="font-family:var(--font-en)">NT$ ${catTotal.toLocaleString()}</span></span>
+        </div>
+        <table class="expense-table" style="font-size:13px">
+          <thead><tr><th>項目</th><th>日期</th><th>金額</th><th>備註</th><th></th></tr></thead>
+          <tbody>${rows.map(e=>`<tr>
+            <td style="font-size:13px">${e.name}</td>
+            <td style="font-size:13px;color:var(--muted);font-family:var(--font-zh)">${e.date||'--'}</td>
+            <td style="font-size:13px;font-family:var(--font-en);letter-spacing:0.3px">NT$ ${Number(e.amount).toLocaleString()}</td>
+            <td style="font-size:13px;color:var(--muted)">${e.note||''}</td>
+            <td><div style="display:flex;gap:3px">
+              <button class="icon-btn" onclick="openExpenseModal('${e.id}')">✏️</button>
+              <button class="icon-btn" onclick="deleteExpense('${e.id}')">🗑️</button>
+            </div></td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>`;
+    });
+    // 總計列
+    tableHtml+=`
+      <div style="display:flex;justify-content:flex-end;padding:8px 12px;background:rgba(184,132,30,0.1);border-top:2px solid var(--gold);margin-top:4px">
+        <span style="font-size:14px;font-weight:700;color:var(--gold)"><span style="font-family:var(--font-zh)">總計 </span><span style="font-family:var(--font-en)">NT$ ${total.toLocaleString()}</span></span>
+      </div>
+    </div>`;
+  } else {
+    tableHtml=`<div class="empty-state"><div class="empty-icon">💰</div><div class="empty-text">尚未記錄費用</div></div>`;
+  }
+
   return `<div class="section-actions">
     <button class="btn btn-outline btn-sm" onclick="exportTabExcel('expense')">📤 匯出</button>
     <label class="btn btn-outline btn-sm" style="cursor:pointer">📥 匯入<input type="file" accept=".xlsx" class="file-input" onchange="importExpenseExcel(event)"></label>
     <button class="btn btn-primary btn-sm" onclick="openExpenseModal()">＋ 新增費用</button>
   </div>
   <div class="expense-summary">
-    <div class="expense-stat"><div class="expense-stat-amount">NT$ ${total.toLocaleString()}</div><div class="expense-stat-label">總花費</div></div>
-    <div class="expense-stat"><div class="expense-stat-amount">${budget?'NT$ '+budget.toLocaleString():'未設定'}</div><div class="expense-stat-label">預算</div></div>
-    <div class="expense-stat"><div class="expense-stat-amount">${topCat?topCat[0]:'--'}</div><div class="expense-stat-label">最大費用類別</div></div>
+    <div class="expense-stat"><div class="expense-stat-amount" style="font-size:20px">NT$ ${total.toLocaleString()}</div><div class="expense-stat-label">總花費</div></div>
+    <div class="expense-stat"><div class="expense-stat-amount" style="font-size:20px">${budget?'NT$ '+budget.toLocaleString():'未設定'}</div><div class="expense-stat-label">預算</div></div>
+    <div class="expense-stat"><div class="expense-stat-amount" style="font-size:20px">${topCat?topCat[0]:'--'}</div><div class="expense-stat-label">最大費用類別</div></div>
   </div>
-  ${budget?`<div class="budget-bar-wrap"><div class="budget-bar-bg"><div class="budget-bar-fill" style="width:${pct}%"></div></div><div class="budget-bar-labels"><span>已用 ${pct}%</span><span>剩餘 NT$ ${(budget-total).toLocaleString()}</span></div></div>`:''}
+  ${budget?`<div class="budget-bar-wrap"><div class="budget-bar-bg"><div class="budget-bar-fill" style="width:${pct}%"></div></div><div class="budget-bar-labels"><span style="font-size:12px">已用 ${pct}%</span><span style="font-size:12px">剩餘 NT$ ${(budget-total).toLocaleString()}</span></div></div>`:''}
   <div class="chart-dashboard">
     <div class="chart-card"><div class="chart-card-title">費用類別分佈</div><canvas id="chart-pie"></canvas></div>
     <div class="chart-card"><div class="chart-card-title">各類別金額</div><canvas id="chart-bar"></canvas></div>
   </div>
-  ${exps.length?`<table class="expense-table">
-    <thead><tr><th>類別</th><th>項目</th><th>日期</th><th>金額</th><th>備註</th><th></th></tr></thead>
-    <tbody>${exps.map(e=>`<tr>
-      <td><span class="expense-cat-badge" style="background:${CAT_COLORS[e.cat]||'#95a5a6'}22;color:${CAT_COLORS[e.cat]||'#95a5a6'}">${e.cat}</span></td>
-      <td>${e.name}</td><td style="color:#3a3020;font-size:17px;font-weight:500">${e.date||'--'}</td>
-      <td style="font-family:var(--font-en)">NT$ ${Number(e.amount).toLocaleString()}</td>
-      <td style="color:#3a3020;font-size:17px">${e.note||''}</td>
-      <td><div style="display:flex;gap:3px">
-        <button class="icon-btn" onclick="openExpenseModal('${e.id}')">✏️</button>
-        <button class="icon-btn" onclick="deleteExpense('${e.id}')">🗑️</button>
-      </div></td>
-    </tr>`).join('')}</tbody>
-  </table>`:`<div class="empty-state"><div class="empty-icon">💰</div><div class="empty-text">尚未記錄費用</div></div>`}`;
+  ${tableHtml}`;
 }
 
 function initExpenseCharts(trip){
@@ -1514,8 +1577,8 @@ function initExpenseCharts(trip){
   ['chart-pie','chart-bar'].forEach(id=>{if(expenseCharts[id]){expenseCharts[id].destroy();delete expenseCharts[id];}});
   if(!cats.length)return;
   const pie=document.getElementById('chart-pie'),bar=document.getElementById('chart-bar');
-  if(pie)expenseCharts['chart-pie']=new Chart(pie,{type:'doughnut',data:{labels:cats,datasets:[{data:cats.map(c=>catTotals[c]),backgroundColor:cats.map(c=>CAT_COLORS[c]||'#95a5a6'),borderWidth:2,borderColor:'white'}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:15},padding:10,color:'#0d0900'}}}}});
-  if(bar)expenseCharts['chart-bar']=new Chart(bar,{type:'bar',data:{labels:cats,datasets:[{data:cats.map(c=>catTotals[c]),backgroundColor:cats.map(c=>CAT_COLORS[c]||'#95a5a6'),borderRadius:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'NT$ '+v.toLocaleString()}}}}});
+  if(pie)expenseCharts['chart-pie']=new Chart(pie,{type:'doughnut',data:{labels:cats,datasets:[{data:cats.map(c=>catTotals[c]),backgroundColor:cats.map(c=>CAT_COLORS[c]||'#95a5a6'),borderWidth:2,borderColor:'white'}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:13,family:"'Cormorant Garamond',serif"},padding:10,color:'#0d0900'}}}}});
+  if(bar)expenseCharts['chart-bar']=new Chart(bar,{type:'bar',data:{labels:cats,datasets:[{data:cats.map(c=>catTotals[c]),backgroundColor:cats.map(c=>CAT_COLORS[c]||'#95a5a6'),borderRadius:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'NT$ '+v.toLocaleString(),font:{family:"'Cormorant Garamond',serif",size:13}},grid:{color:'rgba(0,0,0,0.05)'}},x:{ticks:{font:{family:"'Cormorant Garamond',serif",size:13}}}}}}});
 }
 
 function openExpenseModal(id=null){
@@ -1996,10 +2059,10 @@ function renderAnalytics(){
   const avgDaily=totalDays>0?Math.round(totalSpent/totalDays):0;
   el.innerHTML=`
   <div class="kpi-row">
-    <div class="kpi-card"><div class="kpi-value">${filtered.length}</div><div class="kpi-label">旅程總數</div></div>
-    <div class="kpi-card"><div class="kpi-value">NT$ ${totalSpent.toLocaleString()}</div><div class="kpi-label">歷史總花費</div></div>
-    <div class="kpi-card"><div class="kpi-value">${totalDays}</div><div class="kpi-label">旅遊總天數</div></div>
-    <div class="kpi-card"><div class="kpi-value">NT$ ${avgDaily.toLocaleString()}</div><div class="kpi-label">平均每日花費</div></div>
+    <div class="kpi-card"><div class="kpi-value" style="font-family:var(--font-en)">${filtered.length}</div><div class="kpi-label">旅程總數</div></div>
+    <div class="kpi-card"><div class="kpi-value" style="font-family:var(--font-en)">NT$ ${totalSpent.toLocaleString()}</div><div class="kpi-label">歷史總花費</div></div>
+    <div class="kpi-card"><div class="kpi-value" style="font-family:var(--font-en)">${totalDays}</div><div class="kpi-label">旅遊總天數</div></div>
+    <div class="kpi-card"><div class="kpi-value" style="font-family:var(--font-en)">NT$ ${avgDaily.toLocaleString()}</div><div class="kpi-label">平均每日花費</div></div>
   </div>
   <div class="analytics-grid">
     <div class="analytics-card"><div class="analytics-title">各旅程總費用</div><canvas id="ac-total"></canvas></div>
@@ -2027,15 +2090,15 @@ function renderAnalytics(){
     const days=filtered.map(t=>parseInt(calcDays(t.startDate,t.endDate))||0);
     const dailyAvg=filtered.map((t,i)=>days[i]?Math.round(totals[i]/days[i]):0);
     const tripColors=filtered.map((_,i)=>`hsl(${(i*53+185)%360},42%,48%)`);
-    const mkBar=(id,labels,data,colors)=>{const el=document.getElementById(id);if(!el)return;return new Chart(el,{type:'bar',data:{labels,datasets:[{data,backgroundColor:colors||'rgba(201,151,58,0.7)',borderRadius:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'NT$ '+v.toLocaleString()}}}}});};
+    const mkBar=(id,labels,data,colors)=>{const el=document.getElementById(id);if(!el)return;return new Chart(el,{type:'bar',data:{labels,datasets:[{data,backgroundColor:colors||'rgba(201,151,58,0.7)',borderRadius:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'NT$ '+v.toLocaleString(),font:{family:"'Cormorant Garamond',serif",size:13}}},x:{ticks:{font:{family:"'Cormorant Garamond',serif",size:13}}}}}});};
     analyticsCharts['ac-total']=mkBar('ac-total',names,totals,tripColors);
-    const dEl=document.getElementById('ac-days');if(dEl)analyticsCharts['ac-days']=new Chart(dEl,{type:'bar',data:{labels:names,datasets:[{data:days,backgroundColor:'rgba(42,74,74,0.65)',borderRadius:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{stepSize:1}}}}});
+    const dEl=document.getElementById('ac-days');if(dEl)analyticsCharts['ac-days']=new Chart(dEl,{type:'bar',data:{labels:names,datasets:[{data:days,backgroundColor:'rgba(42,74,74,0.65)',borderRadius:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{stepSize:1,font:{family:"'Cormorant Garamond',serif",size:13}}},x:{ticks:{font:{family:"'Cormorant Garamond',serif",size:13}}}}}});
     analyticsCharts['ac-daily']=mkBar('ac-daily',names,dailyAvg,tripColors);
     const catTotals={};filtered.forEach(t=>(t.expenses||[]).forEach(e=>{catTotals[e.cat]=(catTotals[e.cat]||0)+e.amount;}));
     const catEl=document.getElementById('ac-cat');const catKeys=Object.keys(catTotals);
-    if(catEl&&catKeys.length)analyticsCharts['ac-cat']=new Chart(catEl,{type:'doughnut',data:{labels:catKeys,datasets:[{data:catKeys.map(c=>catTotals[c]),backgroundColor:catKeys.map(c=>CAT_COLORS[c]||'#95a5a6'),borderWidth:2,borderColor:'white'}]},options:{responsive:true,plugins:{legend:{position:'right',labels:{font:{size:15},padding:12,color:'#0d0900'}}}}});
+    if(catEl&&catKeys.length)analyticsCharts['ac-cat']=new Chart(catEl,{type:'doughnut',data:{labels:catKeys,datasets:[{data:catKeys.map(c=>catTotals[c]),backgroundColor:catKeys.map(c=>CAT_COLORS[c]||'#95a5a6'),borderWidth:2,borderColor:'white'}]},options:{responsive:true,plugins:{legend:{position:'right',labels:{font:{size:13,family:"'Cormorant Garamond',serif"},padding:12,color:'#0d0900'}}}}});
     const allCats=['交通','住宿','餐飲','門票','購物','其他'];const bkEl=document.getElementById('ac-breakdown');
-    if(bkEl)analyticsCharts['ac-breakdown']=new Chart(bkEl,{type:'bar',data:{labels:names,datasets:allCats.map(cat=>({label:cat,data:filtered.map(t=>(t.expenses||[]).filter(e=>e.cat===cat).reduce((s,e)=>s+e.amount,0)),backgroundColor:CAT_COLORS[cat]||'#95a5a6',borderRadius:2}))},options:{responsive:true,scales:{x:{stacked:true},y:{stacked:true,ticks:{callback:v=>'NT$ '+v.toLocaleString()}}},plugins:{legend:{position:'bottom'}}}});
+    if(bkEl)analyticsCharts['ac-breakdown']=new Chart(bkEl,{type:'bar',data:{labels:names,datasets:allCats.map(cat=>({label:cat,data:filtered.map(t=>(t.expenses||[]).filter(e=>e.cat===cat).reduce((s,e)=>s+e.amount,0)),backgroundColor:CAT_COLORS[cat]||'#95a5a6',borderRadius:2}))},options:{responsive:true,scales:{x:{stacked:true},y:{stacked:true,ticks:{callback:v=>'NT$ '+v.toLocaleString()}}},plugins:{legend:{position:'bottom',labels:{font:{family:"'Cormorant Garamond',serif",size:13}}}}}});
   },80);
 }
 
