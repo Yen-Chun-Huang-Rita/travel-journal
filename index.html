@@ -1573,13 +1573,30 @@ function renderExpenses(trip){
 }
 
 function initExpenseCharts(trip){
-  const exps=trip.expenses||[];const catTotals={};exps.forEach(e=>{catTotals[e.cat]=(catTotals[e.cat]||0)+e.amount;});
-  const cats=Object.keys(catTotals);
-  ['chart-pie','chart-bar'].forEach(id=>{if(expenseCharts[id]){expenseCharts[id].destroy();delete expenseCharts[id];}});
+  var exps=trip.expenses||[];
+  var catTotals={};
+  exps.forEach(function(e){catTotals[e.cat]=(catTotals[e.cat]||0)+e.amount;});
+  var cats=Object.keys(catTotals);
+  ['chart-pie','chart-bar'].forEach(function(id){
+    if(expenseCharts[id]){expenseCharts[id].destroy();delete expenseCharts[id];}
+  });
   if(!cats.length)return;
-  const pie=document.getElementById('chart-pie'),bar=document.getElementById('chart-bar');
-  if(pie)expenseCharts['chart-pie']=new Chart(pie,{type:'doughnut',data:{labels:cats,datasets:[{data:cats.map(c=>catTotals[c]),backgroundColor:cats.map(c=>CAT_COLORS[c]||'#95a5a6'),borderWidth:2,borderColor:'white'}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:13,family:'Cormorant Garamond,serif'},padding:10,color:'#0d0900'}}}}});
-  if(bar)expenseCharts['chart-bar']=new Chart(bar,{type:'bar',data:{labels:cats,datasets:[{data:cats.map(c=>catTotals[c]),backgroundColor:cats.map(c=>CAT_COLORS[c]||'#95a5a6'),borderRadius:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'NT$ '+v.toLocaleString(),font:{family:'Cormorant Garamond,serif',size:13}},grid:{color:'rgba(0,0,0,0.05)'}},x:{ticks:{font:{family:'Cormorant Garamond,serif',size:13}}}}}}});
+  var pie=document.getElementById('chart-pie');
+  var bar=document.getElementById('chart-bar');
+  if(pie){
+    expenseCharts['chart-pie']=new Chart(pie,{
+      type:'doughnut',
+      data:{labels:cats,datasets:[{data:cats.map(function(c){return catTotals[c];}),backgroundColor:cats.map(function(c){return CAT_COLORS[c]||'#95a5a6';}),borderWidth:2,borderColor:'white'}]},
+      options:{responsive:true,plugins:{legend:{position:'bottom',labels:{padding:10,color:'#0d0900'}}}}
+    });
+  }
+  if(bar){
+    expenseCharts['chart-bar']=new Chart(bar,{
+      type:'bar',
+      data:{labels:cats,datasets:[{data:cats.map(function(c){return catTotals[c];}),backgroundColor:cats.map(function(c){return CAT_COLORS[c]||'#95a5a6';}),borderRadius:3}]},
+      options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:function(v){return 'NT$ '+v.toLocaleString();}}}}}
+    });
+  }
 }
 
 function openExpenseModal(id=null){
@@ -2091,15 +2108,15 @@ function renderAnalytics(){
     const days=filtered.map(t=>parseInt(calcDays(t.startDate,t.endDate))||0);
     const dailyAvg=filtered.map((t,i)=>days[i]?Math.round(totals[i]/days[i]):0);
     const tripColors=filtered.map((_,i)=>`hsl(${(i*53+185)%360},42%,48%)`);
-    const mkBar=(id,labels,data,colors)=>{const el=document.getElementById(id);if(!el)return;return new Chart(el,{type:'bar',data:{labels,datasets:[{data,backgroundColor:colors||'rgba(201,151,58,0.7)',borderRadius:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'NT$ '+v.toLocaleString(),font:{family:'Cormorant Garamond,serif',size:13}}},x:{ticks:{font:{family:'Cormorant Garamond,serif',size:13}}}}}});};
+    const mkBar=(id,labels,data,colors)=>{const el=document.getElementById(id);if(!el)return;return new Chart(el,{type:'bar',data:{labels,datasets:[{data,backgroundColor:colors||'rgba(201,151,58,0.7)',borderRadius:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'NT$ '+v.toLocaleString()}}}}});};
     analyticsCharts['ac-total']=mkBar('ac-total',names,totals,tripColors);
-    const dEl=document.getElementById('ac-days');if(dEl)analyticsCharts['ac-days']=new Chart(dEl,{type:'bar',data:{labels:names,datasets:[{data:days,backgroundColor:'rgba(42,74,74,0.65)',borderRadius:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{stepSize:1,font:{family:'Cormorant Garamond,serif',size:13}}},x:{ticks:{font:{family:'Cormorant Garamond,serif',size:13}}}}}});
+    const dEl=document.getElementById('ac-days');if(dEl)analyticsCharts['ac-days']=new Chart(dEl,{type:'bar',data:{labels:names,datasets:[{data:days,backgroundColor:'rgba(42,74,74,0.65)',borderRadius:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{stepSize:1}}}}});
     analyticsCharts['ac-daily']=mkBar('ac-daily',names,dailyAvg,tripColors);
     const catTotals={};filtered.forEach(t=>(t.expenses||[]).forEach(e=>{catTotals[e.cat]=(catTotals[e.cat]||0)+e.amount;}));
     const catEl=document.getElementById('ac-cat');const catKeys=Object.keys(catTotals);
-    if(catEl&&catKeys.length)analyticsCharts['ac-cat']=new Chart(catEl,{type:'doughnut',data:{labels:catKeys,datasets:[{data:catKeys.map(c=>catTotals[c]),backgroundColor:catKeys.map(c=>CAT_COLORS[c]||'#95a5a6'),borderWidth:2,borderColor:'white'}]},options:{responsive:true,plugins:{legend:{position:'right',labels:{font:{size:13,family:'Cormorant Garamond,serif'},padding:12,color:'#0d0900'}}}}});
+    if(catEl&&catKeys.length)analyticsCharts['ac-cat']=new Chart(catEl,{type:'doughnut',data:{labels:catKeys,datasets:[{data:catKeys.map(c=>catTotals[c]),backgroundColor:catKeys.map(c=>CAT_COLORS[c]||'#95a5a6'),borderWidth:2,borderColor:'white'}]},options:{responsive:true,plugins:{legend:{position:'right',labels:{padding:12,color:'#0d0900'}}}}});
     const allCats=['交通','住宿','餐飲','門票','購物','其他'];const bkEl=document.getElementById('ac-breakdown');
-    if(bkEl)analyticsCharts['ac-breakdown']=new Chart(bkEl,{type:'bar',data:{labels:names,datasets:allCats.map(cat=>({label:cat,data:filtered.map(t=>(t.expenses||[]).filter(e=>e.cat===cat).reduce((s,e)=>s+e.amount,0)),backgroundColor:CAT_COLORS[cat]||'#95a5a6',borderRadius:2}))},options:{responsive:true,scales:{x:{stacked:true},y:{stacked:true,ticks:{callback:v=>'NT$ '+v.toLocaleString()}}},plugins:{legend:{position:'bottom',labels:{font:{family:'Cormorant Garamond,serif',size:13}}}}}});
+    if(bkEl)analyticsCharts['ac-breakdown']=new Chart(bkEl,{type:'bar',data:{labels:names,datasets:allCats.map(cat=>({label:cat,data:filtered.map(t=>(t.expenses||[]).filter(e=>e.cat===cat).reduce((s,e)=>s+e.amount,0)),backgroundColor:CAT_COLORS[cat]||'#95a5a6',borderRadius:2}))},options:{responsive:true,scales:{x:{stacked:true},y:{stacked:true,ticks:{callback:v=>'NT$ '+v.toLocaleString()}}},plugins:{legend:{position:'bottom',labels:{font:{}}}}}});
   },80);
 }
 
