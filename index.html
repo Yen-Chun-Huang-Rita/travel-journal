@@ -1579,7 +1579,7 @@ function initExpenseCharts(trip){
   var cats=Object.keys(catTotals);
   ['chart-pie','chart-bar'].forEach(function(id){
     if(expenseCharts[id]){expenseCharts[id].destroy();delete expenseCharts[id];}
-  });
+  if(bar)expenseCharts['chart-bar']=new Chart(bar,{type:'bar',data:{labels:cats,datasets:[{data:cats.map(function(c){return catTotals[c];}),backgroundColor:cats.map(function(c){return CAT_COLORS[c]||'#95a5a6';}),borderRadius:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:function(v){return 'NT$ '+v.toLocaleString();}}}}}});
   if(!cats.length)return;
   var pie=document.getElementById('chart-pie');
   var bar=document.getElementById('chart-bar');
