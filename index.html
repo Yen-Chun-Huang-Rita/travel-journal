@@ -384,7 +384,7 @@ td.num, .num { font-family: var(--font-en) !important; }
 
 <!-- NEW TRIP -->
 <div class="modal-overlay" id="modal-new-trip">
-  <div class="modal">
+  <div class="modal" onmousedown="event.stopPropagation()" onmouseup="event.stopPropagation()">
     <div class="modal-header"><div class="modal-title">新增旅程</div><button class="modal-close" onclick="closeModal('modal-new-trip')">✕</button></div>
     <div class="modal-body">
       <div class="form-row">
@@ -428,7 +428,7 @@ td.num, .num { font-family: var(--font-en) !important; }
 
 <!-- EDIT TRIP -->
 <div class="modal-overlay" id="modal-edit-trip">
-  <div class="modal">
+  <div class="modal" onmousedown="event.stopPropagation()" onmouseup="event.stopPropagation()">
     <div class="modal-header"><div class="modal-title">編輯旅程</div><button class="modal-close" onclick="closeModal('modal-edit-trip')">✕</button></div>
     <div class="modal-body">
       <div class="form-row">
@@ -541,7 +541,7 @@ td.num, .num { font-family: var(--font-en) !important; }
 
 <!-- MODAL: 登山裝備 -->
 <div class="modal-overlay" id="modal-hiking">
-  <div class="modal">
+  <div class="modal" onmousedown="event.stopPropagation()" onmouseup="event.stopPropagation()">
     <div class="modal-header"><div class="modal-title" id="hike-modal-title">新增登山裝備</div><button class="modal-close" onclick="closeModal('modal-hiking')">✕</button></div>
     <div class="modal-body">
       <div class="form-group"><label class="label">裝備名稱 *</label><input id="hike-name" class="input" placeholder="例：登山杖、羽絨外套"></div>
@@ -1509,10 +1509,18 @@ function renderExpenses(trip){
   const pct=budget?Math.min(100,Math.round(total/budget*100)):0;
   const topCat=Object.entries(exps.reduce((a,e)=>{a[e.cat]=(a[e.cat]||0)+e.amount;return a},{})).sort((a,b)=>b[1]-a[1])[0];
 
-  // 按類別分組
+  // 按類別分組，各類別內按日期排序
   const catOrder=['交通','住宿','餐飲','門票','購物','其他'];
   const grouped={};
   exps.forEach(e=>{if(!grouped[e.cat])grouped[e.cat]=[];grouped[e.cat].push(e);});
+  Object.keys(grouped).forEach(cat=>{
+    grouped[cat].sort((a,b)=>{
+      if(!a.date&&!b.date)return 0;
+      if(!a.date)return 1;
+      if(!b.date)return -1;
+      return a.date.localeCompare(b.date);
+    });
+  });
   const cats=[...catOrder.filter(c=>grouped[c]),...Object.keys(grouped).filter(c=>!catOrder.includes(c))];
 
   // 建立分組表格 HTML
@@ -2234,26 +2242,7 @@ function _showSaveDot(ok){
 function openModal(id){
   var el=document.getElementById(id);
   el.classList.add('open');
-  el.onclick = null;
-  el.onmousedown = null;
-  // 用 mousedown + mouseup 雙重確認，防止拖曳選字誤關
-  var _downOnBg = false;
-  function onDown(e){
-    _downOnBg = (e.target === el);
-  }
-  function onUp(e){
-    if(_downOnBg && e.target === el){
-      closeModal(id);
-    }
-    _downOnBg = false;
-  }
-  // 移除舊的 listener 再加新的
-  el.removeEventListener('mousedown', el._onDown);
-  el.removeEventListener('mouseup', el._onUp);
-  el._onDown = onDown;
-  el._onUp = onUp;
-  el.addEventListener('mousedown', onDown);
-  el.addEventListener('mouseup', onUp);
+  el.onclick=function(e){if(e.target===el)closeModal(id);};
 }
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 
