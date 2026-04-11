@@ -2122,9 +2122,36 @@ function renderAnalytics(){
     analyticsCharts['ac-daily']=mkBar('ac-daily',names,dailyAvg,tripColors);
     const catTotals={};filtered.forEach(t=>(t.expenses||[]).forEach(e=>{catTotals[e.cat]=(catTotals[e.cat]||0)+e.amount;}));
     const catEl=document.getElementById('ac-cat');const catKeys=Object.keys(catTotals);
-    if(catEl&&catKeys.length)analyticsCharts['ac-cat']=new Chart(catEl,{type:'doughnut',data:{labels:catKeys,datasets:[{data:catKeys.map(c=>catTotals[c]),backgroundColor:catKeys.map(c=>CAT_COLORS[c]||'#95a5a6'),borderWidth:2,borderColor:'white'}]},options:{responsive:true,plugins:{legend:{position:'right',labels:{padding:12,color:'#0d0900'}}}}});
-    const allCats=['交通','住宿','餐飲','門票','購物','其他'];const bkEl=document.getElementById('ac-breakdown');
-    if(bkEl)analyticsCharts['ac-breakdown']=new Chart(bkEl,{type:'bar',data:{labels:names,datasets:allCats.map(cat=>({label:cat,data:filtered.map(t=>(t.expenses||[]).filter(e=>e.cat===cat).reduce((s,e)=>s+e.amount,0)),backgroundColor:CAT_COLORS[cat]||'#95a5a6',borderRadius:2}))},options:{responsive:true,scales:{x:{stacked:true},y:{stacked:true,ticks:{callback:v=>'NT$ '+v.toLocaleString()}}},plugins:{legend:{position:'bottom',labels:{font:{}}}}}});
+    if(catEl&&catKeys.length){
+      var catTotal=catKeys.reduce(function(s,k){return s+catTotals[k];},0);
+      analyticsCharts['ac-cat']=new Chart(catEl,{type:'doughnut',data:{labels:catKeys,datasets:[{data:catKeys.map(function(k){return catTotals[k];}),backgroundColor:catKeys.map(function(k){return CAT_COLORS[k]||'#95a5a6';}),borderWidth:2,borderColor:'white'}]},options:{responsive:true,plugins:{
+        tooltip:{callbacks:{label:function(ctx){
+          var val=ctx.parsed;
+          var pct=catTotal?Math.round(val/catTotal*1000)/10:0;
+          return ctx.label+': NT$ '+val.toLocaleString()+' ('+pct+'%)';
+        }}},
+        legend:{position:'right',labels:{padding:12,color:'#0d0900',generateLabels:function(chart){
+          var ds=chart.data.datasets[0];
+          return chart.data.labels.map(function(label,i){
+            var val=ds.data[i];
+            var pct=catTotal?Math.round(val/catTotal*1000)/10:0;
+            return {text:label+' '+pct+'%',fillStyle:ds.backgroundColor[i],strokeStyle:'white',lineWidth:1,index:i};
+          });
+        }}}
+      }}});
+    }
+    const allCats=['交通','住宿','餐飲','門票','購物','登山用品','其他'];const bkEl=document.getElementById('ac-breakdown');
+    if(bkEl){
+      analyticsCharts['ac-breakdown']=new Chart(bkEl,{type:'bar',data:{labels:names,datasets:allCats.map(function(cat){return {label:cat,data:filtered.map(function(t){return (t.expenses||[]).filter(function(e){return e.cat===cat;}).reduce(function(s,e){return s+e.amount;},0);}),backgroundColor:CAT_COLORS[cat]||'#95a5a6',borderRadius:2};})},options:{responsive:true,scales:{x:{stacked:true},y:{stacked:true,ticks:{callback:function(v){return 'NT$ '+v.toLocaleString();}}}},plugins:{
+        tooltip:{callbacks:{label:function(ctx){
+          var val=ctx.parsed.y-ctx.parsed._stacks.y._visualValues[ctx.datasetIndex]||ctx.raw;
+          var tripTotal=ctx.chart.data.datasets.reduce(function(s,ds){return s+(ds.data[ctx.dataIndex]||0);},0);
+          var pct=tripTotal?Math.round(ctx.raw/tripTotal*1000)/10:0;
+          return ctx.dataset.label+': NT$ '+ctx.raw.toLocaleString()+' ('+pct+'%)';
+        }}},
+        legend:{position:'bottom',labels:{font:{}}}
+      }}});
+    }
   },80);
 }
 
