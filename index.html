@@ -1472,54 +1472,7 @@ function printSection(type){
   }
 
   const w=window.open('','_blank','width=800,height=600');
-  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>列印</title></head><body>'+html+'
-<!-- 餐廳預訂 Modal -->
-<div class="modal-overlay" id="modal-restaurant">
-  <div class="modal" onmousedown="event.stopPropagation()" onmouseup="event.stopPropagation()">
-    <div class="modal-header">
-      <div class="modal-title" id="rest-modal-title">新增餐廳預訂</div>
-      <button class="modal-close" onclick="closeModal('modal-restaurant')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group"><label>餐廳名稱 *</label><input type="text" id="rest-name" placeholder="例：祥雲龍吟"></div>
-      <div class="form-row">
-        <div class="form-group"><label>日期</label><select id="rest-date"></select></div>
-        <div class="form-group"><label>時間</label>
-          <div style="display:flex;gap:8px">
-            <select id="rest-hour" style="flex:1"></select>
-            <select id="rest-min" style="flex:1"></select>
-          </div>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>人數</label><input type="number" id="rest-people" placeholder="例：2" min="1"></div>
-        <div class="form-group"><label>訂金 (NT$)</label><input type="number" id="rest-deposit" placeholder="例：1000" min="0"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>預訂狀態</label>
-          <select id="rest-status">
-            <option>待確認</option><option>已確認</option><option>已取消</option>
-          </select>
-        </div>
-        <div class="form-group"><label>訂位方式</label>
-          <select id="rest-method">
-            <option>網路</option><option>電話</option><option>Email</option><option>現場</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group"><label>確認碼</label><input type="text" id="rest-code" placeholder="例：R-20240601-001"></div>
-      <div class="form-group"><label>備註</label>
-        <textarea id="rest-note" placeholder="例：窗邊座位、素食需求…" style="width:100%;min-height:80px;resize:vertical;padding:10px;border:1px solid rgba(184,132,30,0.3);border-radius:2px;font-family:var(--font-zh);font-size:15px;background:white;color:var(--ink);box-sizing:border-box;line-height:1.5"></textarea>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-restaurant')">取消</button>
-      <button class="btn btn-primary" onclick="saveRestaurant()">儲存</button>
-    </div>
-  </div>
-</div>
-
-</body></html>');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>列印</title></head><body>'+html+'</body></html>');
   w.document.close();
   w.focus();
   setTimeout(()=>w.print(),500);
