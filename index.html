@@ -1106,6 +1106,7 @@ function copyTrip(id, event){
 function openTrip(id){currentTripId=id;showPage('detail');renderTripDetail(trips.find(t=>t.id===id));}
 
 function renderTripDetail(trip){
+  if(!trip.restaurants) trip.restaurants=[];
   const el=document.getElementById('trip-detail-content');
   const days=calcDays(trip.startDate,trip.endDate);
   const spent=(trip.expenses||[]).reduce((s,e)=>s+e.amount,0);
@@ -1138,6 +1139,7 @@ function renderTripDetail(trip){
     <div class="tab ${currentDetailTab==='hiking'?'active':''}" onclick="switchTab('hiking')">⛰️ 登山裝備</div>
     <div class="tab ${currentDetailTab==='expense'?'active':''}" onclick="switchTab('expense')">💰 費用明細</div>
     <div class="tab ${currentDetailTab==='photos'?'active':''}" onclick="switchTab('photos')">📸 相片</div>
+    <div class="tab ${currentDetailTab==='restaurant'?'active':''}" onclick="switchTab('restaurant')">🍽️ 餐廳預訂</div>
     <div class="tab ${currentDetailTab==='notes'?'active':''}" onclick="switchTab('notes')">📝 特殊記錄</div>
   </div>
   <div class="tab-content ${currentDetailTab==='itinerary'?'active':''}" id="tab-itinerary">${renderItinerary(trip)}</div>
@@ -1155,6 +1157,7 @@ function renderTripDetail(trip){
       </div>
     </div>
   </div>
+  <div class="tab-content ${currentDetailTab==='restaurant'?'active':''}" id="tab-restaurant">${renderRestaurants(trip)}</div>
   <div class="tab-content ${currentDetailTab==='notes'?'active':''}" id="tab-notes">
     <div class="section-actions">
       <button class="btn btn-outline btn-sm" onclick="exportNotesExcel()">📤 匯出 Excel</button>
@@ -1469,7 +1472,54 @@ function printSection(type){
   }
 
   const w=window.open('','_blank','width=800,height=600');
-  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>列印</title></head><body>'+html+'</body></html>');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>列印</title></head><body>'+html+'
+<!-- 餐廳預訂 Modal -->
+<div class="modal-overlay" id="modal-restaurant">
+  <div class="modal" onmousedown="event.stopPropagation()" onmouseup="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title" id="rest-modal-title">新增餐廳預訂</div>
+      <button class="modal-close" onclick="closeModal('modal-restaurant')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label>餐廳名稱 *</label><input type="text" id="rest-name" placeholder="例：祥雲龍吟"></div>
+      <div class="form-row">
+        <div class="form-group"><label>日期</label><select id="rest-date"></select></div>
+        <div class="form-group"><label>時間</label>
+          <div style="display:flex;gap:8px">
+            <select id="rest-hour" style="flex:1"></select>
+            <select id="rest-min" style="flex:1"></select>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>人數</label><input type="number" id="rest-people" placeholder="例：2" min="1"></div>
+        <div class="form-group"><label>訂金 (NT$)</label><input type="number" id="rest-deposit" placeholder="例：1000" min="0"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>預訂狀態</label>
+          <select id="rest-status">
+            <option>待確認</option><option>已確認</option><option>已取消</option>
+          </select>
+        </div>
+        <div class="form-group"><label>訂位方式</label>
+          <select id="rest-method">
+            <option>網路</option><option>電話</option><option>Email</option><option>現場</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label>確認碼</label><input type="text" id="rest-code" placeholder="例：R-20240601-001"></div>
+      <div class="form-group"><label>備註</label>
+        <textarea id="rest-note" placeholder="例：窗邊座位、素食需求…" style="width:100%;min-height:80px;resize:vertical;padding:10px;border:1px solid rgba(184,132,30,0.3);border-radius:2px;font-family:var(--font-zh);font-size:15px;background:white;color:var(--ink);box-sizing:border-box;line-height:1.5"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-restaurant')">取消</button>
+      <button class="btn btn-primary" onclick="saveRestaurant()">儲存</button>
+    </div>
+  </div>
+</div>
+
+</body></html>');
   w.document.close();
   w.focus();
   setTimeout(()=>w.print(),500);
@@ -2155,6 +2205,135 @@ function renderAnalytics(){
   },80);
 }
 
+
+
+function buildDateOptions(startDate, endDate){
+  const opts=[];
+  if(!startDate) return opts;
+  const s=new Date(startDate), e=endDate?new Date(endDate):new Date(startDate);
+  const days=['日','一','二','三','四','五','六'];
+  for(let d=new Date(s);d<=e;d.setDate(d.getDate()+1)){
+    const y=d.getFullYear(),mo=String(d.getMonth()+1).padStart(2,'0'),da=String(d.getDate()).padStart(2,'0');
+    const val=`${y}-${mo}-${da}`;
+    const label=`${mo}/${da}（${days[d.getDay()]}）`;
+    opts.push({val,label});
+  }
+  return opts;
+}
+
+// ===== RESTAURANTS =====
+const REST_STATUS = {
+  '待確認': {color:'#c9973a', bg:'rgba(201,151,58,0.12)'},
+  '已確認': {color:'#4a7c4e', bg:'rgba(74,124,78,0.12)'},
+  '已取消': {color:'#95a5a6', bg:'rgba(149,165,166,0.12)'}
+};
+
+function renderRestaurants(trip){
+  const list=(trip.restaurants||[]).slice().sort((a,b)=>{
+    if(!a.date&&!b.date)return 0; if(!a.date)return 1; if(!b.date)return -1;
+    return a.date.localeCompare(b.date)||(a.time||'').localeCompare(b.time||'');
+  });
+  const rows = list.map(r=>{
+    const st = REST_STATUS[r.status]||REST_STATUS['待確認'];
+    return `<tr>
+      <td style="font-size:13px;font-weight:600">${r.name}</td>
+      <td style="font-size:13px;color:var(--muted)">${r.date||'--'}</td>
+      <td style="font-size:13px;font-family:var(--font-en)">${r.time||'--'}</td>
+      <td style="font-size:13px;text-align:center">${r.people||'--'}</td>
+      <td style="font-size:13px;font-family:var(--font-en)">${r.deposit?'NT$ '+Number(r.deposit).toLocaleString():'--'}</td>
+      <td><span style="font-size:12px;font-weight:600;padding:3px 8px;border-radius:10px;background:${st.bg};color:${st.color}">${r.status||'待確認'}</span></td>
+      <td style="font-size:12px;color:var(--muted)">${r.method||'--'}</td>
+      <td style="font-size:13px;font-family:var(--font-en)">${r.code||'--'}</td>
+      <td style="font-size:12px;color:var(--muted);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.note||''}</td>
+      <td><div style="display:flex;gap:3px">
+        <button class="icon-btn" onclick="openRestaurantModal('${r.id}')">✏️</button>
+        <button class="icon-btn" onclick="deleteRestaurant('${r.id}')">🗑️</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+
+  return `<div class="section-actions">
+    <button class="btn btn-primary btn-sm" onclick="openRestaurantModal()">＋ 新增餐廳預訂</button>
+  </div>
+  ${list.length ? `<div style="overflow-x:auto">
+    <table class="expense-table" style="font-size:13px;min-width:700px">
+      <thead><tr>
+        <th>餐廳名稱</th><th>日期</th><th>時間</th><th style="text-align:center">人數</th>
+        <th>訂金</th><th>狀態</th><th>訂位方式</th><th>確認碼</th><th>備註</th><th></th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>` : `<div class="empty-state"><div class="empty-icon">🍽️</div><div class="empty-text">尚未新增餐廳預訂</div></div>`}`;
+}
+
+function openRestaurantModal(id=null){
+  const trip=trips.find(t=>t.id===currentTripId);
+  if(!trip)return;
+  editingId.restaurant=id;
+  const r=id?(trip.restaurants||[]).find(x=>x.id===id):null;
+
+  // 建立日期選項
+  const dates=buildDateOptions(trip.startDate,trip.endDate);
+  const dateOpts=dates.map(d=>`<option value="${d.val}" ${r&&r.date===d.val?'selected':''}>${d.label}</option>`).join('');
+
+  document.getElementById('rest-modal-title').textContent=id?'編輯餐廳預訂':'新增餐廳預訂';
+  document.getElementById('rest-name').value=r?r.name:'';
+  document.getElementById('rest-date').innerHTML=`<option value="">選擇日期</option>${dateOpts}`;
+  if(r&&r.date) document.getElementById('rest-date').value=r.date;
+
+  // 時間
+  const hOpts=Array.from({length:24},(_,i)=>String(i).padStart(2,'0')).map(h=>`<option value="${h}" ${r&&r.time&&r.time.startsWith(h)?'selected':''}>${h}</option>`).join('');
+  const mOpts=['00','15','30','45'].map(m=>`<option value="${m}" ${r&&r.time&&r.time.endsWith(m)?'selected':''}>${m}</option>`).join('');
+  document.getElementById('rest-hour').innerHTML=hOpts;
+  document.getElementById('rest-min').innerHTML=mOpts;
+  if(r&&r.time){const[h,m]=r.time.split(':');document.getElementById('rest-hour').value=h;document.getElementById('rest-min').value=m;}
+
+  document.getElementById('rest-people').value=r?r.people:'';
+  document.getElementById('rest-deposit').value=r?r.deposit:'';
+  document.getElementById('rest-status').value=r?r.status:'待確認';
+  document.getElementById('rest-method').value=r?r.method:'網路';
+  document.getElementById('rest-code').value=r?r.code:'';
+  document.getElementById('rest-note').value=r?r.note:'';
+  openModal('modal-restaurant');
+}
+
+function saveRestaurant(){
+  const trip=trips.find(t=>t.id===currentTripId);
+  if(!trip)return;
+  const name=document.getElementById('rest-name').value.trim();
+  if(!name){alert('請輸入餐廳名稱');return;}
+  if(!trip.restaurants)trip.restaurants=[];
+  const data={
+    id:editingId.restaurant||Date.now().toString(),
+    name,
+    date:document.getElementById('rest-date').value,
+    time:document.getElementById('rest-hour').value+':'+document.getElementById('rest-min').value,
+    people:document.getElementById('rest-people').value,
+    deposit:document.getElementById('rest-deposit').value,
+    status:document.getElementById('rest-status').value,
+    method:document.getElementById('rest-method').value,
+    code:document.getElementById('rest-code').value,
+    note:document.getElementById('rest-note').value
+  };
+  if(editingId.restaurant){
+    const idx=trip.restaurants.findIndex(x=>x.id===editingId.restaurant);
+    if(idx>=0)trip.restaurants[idx]=data;
+  } else {
+    trip.restaurants.push(data);
+  }
+  saveTrips();closeModal('modal-restaurant');
+  toast(editingId.restaurant?'餐廳預訂已更新':'餐廳預訂已新增','🍽️');
+  setTimeout(()=>renderTripDetail(trips.find(t=>t.id===currentTripId)),50);
+}
+
+function deleteRestaurant(id){
+  if(!confirm('確定要刪除這筆餐廳預訂嗎？'))return;
+  const trip=trips.find(t=>t.id===currentTripId);
+  if(!trip)return;
+  trip.restaurants=trip.restaurants.filter(x=>x.id!==id);
+  saveTrips();renderTripDetail(trip);toast('已刪除','🗑️');
+}
+
 // ===== CALENDAR =====
 function renderCalendar(){
   const list=document.getElementById('calendar-list');
@@ -2360,6 +2539,53 @@ function updateMobileStats() {
     <span id="mn-stat-total">0</span> 旅程 &nbsp;|&nbsp;
     <span id="mn-stat-countries">0</span> 國家 &nbsp;|&nbsp;
     <span id="mn-stat-days">0</span> 天
+  </div>
+</div>
+
+
+<!-- 餐廳預訂 Modal -->
+<div class="modal-overlay" id="modal-restaurant">
+  <div class="modal" onmousedown="event.stopPropagation()" onmouseup="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title" id="rest-modal-title">新增餐廳預訂</div>
+      <button class="modal-close" onclick="closeModal('modal-restaurant')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label>餐廳名稱 *</label><input type="text" id="rest-name" placeholder="例：祥雲龍吟"></div>
+      <div class="form-row">
+        <div class="form-group"><label>日期</label><select id="rest-date"></select></div>
+        <div class="form-group"><label>時間</label>
+          <div style="display:flex;gap:8px">
+            <select id="rest-hour" style="flex:1"></select>
+            <select id="rest-min" style="flex:1"></select>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>人數</label><input type="number" id="rest-people" placeholder="例：2" min="1"></div>
+        <div class="form-group"><label>訂金 (NT$)</label><input type="number" id="rest-deposit" placeholder="例：1000" min="0"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>預訂狀態</label>
+          <select id="rest-status">
+            <option>待確認</option><option>已確認</option><option>已取消</option>
+          </select>
+        </div>
+        <div class="form-group"><label>訂位方式</label>
+          <select id="rest-method">
+            <option>網路</option><option>電話</option><option>Email</option><option>現場</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label>確認碼</label><input type="text" id="rest-code" placeholder="例：R-20240601-001"></div>
+      <div class="form-group"><label>備註</label>
+        <textarea id="rest-note" placeholder="例：窗邊座位、素食需求…" style="width:100%;min-height:80px;resize:vertical;padding:10px;border:1px solid rgba(184,132,30,0.3);border-radius:2px;font-family:var(--font-zh);font-size:15px;background:white;color:var(--ink);box-sizing:border-box;line-height:1.5"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-restaurant')">取消</button>
+      <button class="btn btn-primary" onclick="saveRestaurant()">儲存</button>
+    </div>
   </div>
 </div>
 
